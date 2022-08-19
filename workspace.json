@@ -2,7 +2,10 @@
   "$schema": "./node_modules/nx/schemas/workspace-schema.json",
   "version": 2,
   "projects": {
+    "mylib": "libs/mylib",
     "shop": "apps/shop",
-    "shop-e2e": "apps/shop-e2e"
+    "shop-e2e": "apps/shop-e2e",
+    "withlib": "apps/withlib",
+    "withlib-e2e": "apps/withlib-e2e"
   }
 }

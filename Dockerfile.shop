@@ -1,32 +1,37 @@
-# Get NPM packages
-FROM node:16-alpine AS dependencies
+# Install deps and build the source code only when needed
+FROM node:lts-alpine AS builder
 RUN apk add --no-cache libc6-compat
-WORKDIR /shop
+
+WORKDIR /app
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Rebuild the source code only when needed
-FROM node:16-alpine AS builder
-WORKDIR /shop
 COPY . .
-COPY --from=dependencies /shop/node_modules ./node_modules
-RUN npm run build
+
+RUN npx nx run build --project=shop --configuration=production --skip-nx-cache
 
 # Production image, copy all the files and run next
-FROM node:16-alpine AS runner
-WORKDIR /shop
+FROM node:lts-alpine AS runner
+WORKDIR /app
 
 ENV NODE_ENV production
 
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
-COPY --from=builder --chown=nextjs:nodejs /shop/.next ./.next
-COPY --from=builder /shop/public ./public
-COPY --from=builder /shop/package.json ./package.json
-COPY --from=builder /shop/package-lock.json ./package-lock.json
+COPY --from=builder /app/dist/apps/shop/package.json ./
+RUN npm i --omit=dev
 
-RUN npm ci --only=production
+RUN npx next telemetry disable
+
+# You only need to copy next.config.js if you are NOT using the default configuration
+COPY --from=builder /app/dist/apps/shop/next.config.js ./
+COPY --from=builder /app/dist/apps/shop/public ./public
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/dist/apps/shop/.next ./.next
 
 USER nextjs
 EXPOSE 3000

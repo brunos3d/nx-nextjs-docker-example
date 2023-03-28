@@ -9,7 +9,8 @@ RUN npm ci
 
 COPY . .
 
-RUN npx nx run build --project=withlib --configuration=production --skip-nx-cache
+# RUN npx nx run build --project=withlib --configuration=production --skip-nx-cache
+RUN npx nx run build --project=withlib --configuration=production
 
 # Production image, copy all the files and run next
 FROM node:lts-alpine AS runner
@@ -26,8 +27,9 @@ RUN npm i --omit=dev
 RUN npx next telemetry disable
 
 # You only need to copy next.config.js if you are NOT using the default configuration
-COPY --from=builder /app/dist/apps/withlib/next.config.js ./
-COPY --from=builder /app/dist/apps/withlib/public ./public
+# COPY --from=builder /app/dist/apps/withlib/next.config.js ./
+# COPY --from=builder /app/dist/apps/withlib/public ./public
+COPY --from=builder /app/dist/apps/withlib/ ./
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
